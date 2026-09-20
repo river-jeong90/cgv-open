@@ -2,7 +2,7 @@ name: CGV 센텀시티 치이카와 9월30일 감시
 
 on:
   schedule:
-    - cron: "0 */5 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       test_alert:
