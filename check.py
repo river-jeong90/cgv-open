@@ -47,34 +47,74 @@ def tg_send(text):
 class CGVClient:
     def __init__(self):
         self.session = None
-        self.session_created = 0.0
 
-    def _ensure_session(self):
-        if self.session is None or time.monotonic() - self.session_created > 1800:
-            print("[CGV] 새 세션 생성")
-            s = cf_requests.Session(impersonate="chrome")
-            r = s.get(BOOKING_PAGE, timeout=20)
-            if r.status_code != 200:
-                raise RuntimeError(f"CGV 예매 페이지 접속 실패: HTTP {r.status_code}")
-            self.session = s
-            self.session_created = time.monotonic()
+    def _new_session(self):
+        # 정상 세션을 30분마다 강제로 버리지 않는다.
+        # 새 세션 생성 시 예매 메인 페이지를 먼저 방문하지 않고
+        # 시간표 API를 바로 호출한다.
+        print("[CGV] 새 API 세션 생성")
+        self.session = cf_requests.Session(impersonate="chrome")
         return self.session
 
-    def fetch(self):
-        s = self._ensure_session()
-        r = s.get(SCHEDULE_ENDPOINT,
-                  params={"coCd": CO_CD, "siteNo": SITE_NO, "scnYmd": TARGET_DATE, "rtctlScopCd": RTCTL_SCOP_CD},
-                  headers=COMMON_HEADERS,
-                  timeout=20)
-        if r.status_code in (403, 429):
-            self.session = None
-            raise RuntimeError(f"CGV 접근 제한: HTTP {r.status_code}")
+    def _get_session(self):
+        return self.session or self._new_session()
+
+    def reset_session(self):
+        try:
+            if self.session is not None:
+                self.session.close()
+        except Exception:
+            pass
+        self.session = None
+
+    def _fetch_once(self):
+        s = self._get_session()
+        r = s.get(
+            SCHEDULE_ENDPOINT,
+            params={
+                "coCd": CO_CD,
+                "siteNo": SITE_NO,
+                "scnYmd": TARGET_DATE,
+                "rtctlScopCd": RTCTL_SCOP_CD,
+            },
+            headers=COMMON_HEADERS,
+            timeout=20,
+        )
+        if r.status_code == 403:
+            raise RuntimeError("CGV 시간표 API HTTP 403")
+        if r.status_code == 429:
+            raise RuntimeError("CGV 시간표 API HTTP 429")
         if r.status_code != 200:
-            raise RuntimeError(f"CGV API 오류: HTTP {r.status_code}")
+            raise RuntimeError(f"CGV 시간표 API HTTP {r.status_code}")
         payload = r.json()
         if payload.get("statusCode") != 0:
-            raise RuntimeError(f"CGV API statusCode={payload.get('statusCode')} message={payload.get('statusMessage')}")
+            raise RuntimeError(
+                f"CGV API statusCode={payload.get('statusCode')} "
+                f"message={payload.get('statusMessage')}"
+            )
         return payload.get("data") or []
+
+    def fetch(self):
+        # 403/429가 나더라도 예전처럼 60→120→240→300초씩 길게 쉬지 않고
+        # 새 세션으로 짧게 복구를 시도한다.
+        delays = [0, 5, 10, 20, 30]
+        last_error = None
+
+        for attempt, delay in enumerate(delays, start=1):
+            if delay:
+                print(f"[CGV] 빠른 복구 재시도: {delay}초 대기")
+                time.sleep(delay)
+
+            if attempt > 1:
+                self.reset_session()
+
+            try:
+                return self._fetch_once()
+            except Exception as e:
+                last_error = e
+                print(f"[CGV] 조회 실패 {attempt}/{len(delays)}: {e}")
+
+        raise last_error or RuntimeError("CGV 조회 실패")
 
 
 def normalize(text):
@@ -180,10 +220,9 @@ def main():
             return
         except Exception as e:
             fail_count += 1
-            wait = min(300, max(60, 30 * (2 ** min(fail_count, 4))))
-            print(f"[오류] {type(e).__name__}: {e}")
-            print(f"[백오프] {wait}초 대기")
-            time.sleep(wait)
+            print(f"[오류] 빠른 복구까지 실패: {type(e).__name__}: {e}")
+            print("[재시도] 30초 후 다시 확인")
+            time.sleep(30)
 
     print("[종료] 이번 Actions 실행 시간 종료. 다음 예약 실행이 이어서 감시합니다.")
 
