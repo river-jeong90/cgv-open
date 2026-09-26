@@ -1,46 +1,29 @@
-name: CGV 센텀시티 치이카와 9월30일 감시
+name: CGV 센텀시티 치이카와 변동 감시
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
-    inputs:
-      test_alert:
-        description: "텔레그램 테스트 알림만 보내기"
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: cgv-centum-chiikawa-watch
+  group: cgv-centum-chiikawa-short
   cancel-in-progress: false
 
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
-
+    timeout-minutes: 8
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      TEST_ALERT: ${{ github.event_name == 'workflow_dispatch' && inputs.test_alert && 'true' || 'false' }}
-      RUN_SECONDS: "20000"
-
     steps:
-      - name: 코드 받기
-        uses: actions/checkout@v4
-
-      - name: Python 설치
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: 패키지 설치
-        run: pip install -r requirements.txt
-
-      - name: CGV 감시 실행
-        run: python -u check.py
+      - run: pip install -r requirements.txt
+      - run: python -u check.py
