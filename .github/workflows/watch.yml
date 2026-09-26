@@ -1,4 +1,4 @@
-name: CGV 센텀시티 치이카와 변동 감시
+name: CGV 센텀시티 치이카와 9/30 + 10/3 변동 감시
 
 on:
   schedule:
@@ -9,21 +9,32 @@ permissions:
   contents: write
 
 concurrency:
-  group: cgv-centum-chiikawa-short
+  group: cgv-centum-chiikawa-multidate
   cancel-in-progress: false
 
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
+
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      GITHUB_TOKEN: ${{ github.token }}
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: 코드 받기
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: python -u check.py
+
+      - name: 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: CGV 9/30 + 10/3 감시
+        run: python -u check.py
