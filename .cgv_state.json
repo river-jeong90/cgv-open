@@ -59,15 +59,23 @@
           "title": "극장판 치이카와-인어 섬의 비밀",
           "screen": "6관 (Laser)",
           "start": "08:40",
-          "free": "307",
+          "free": "2",
           "total": "333"
+        },
+        {
+          "key": "극장판 치이카와-인어 섬의 비밀|템퍼 시네마[CINE de CHEF]|1000",
+          "title": "극장판 치이카와-인어 섬의 비밀",
+          "screen": "템퍼 시네마[CINE de CHEF]",
+          "start": "10:00",
+          "free": "28",
+          "total": "30"
         },
         {
           "key": "극장판 치이카와-인어 섬의 비밀|6관 (Laser)|1050",
           "title": "극장판 치이카와-인어 섬의 비밀",
           "screen": "6관 (Laser)",
           "start": "10:50",
-          "free": "324",
+          "free": "4",
           "total": "333"
         },
         {
@@ -75,8 +83,24 @@
           "title": "극장판 치이카와-인어 섬의 비밀",
           "screen": "6관 (Laser)",
           "start": "13:00",
-          "free": "325",
+          "free": "191",
           "total": "333"
+        },
+        {
+          "key": "극장판 치이카와-인어 섬의 비밀|스트레스리스 시네마[CINE de CHEF]|1340",
+          "title": "극장판 치이카와-인어 섬의 비밀",
+          "screen": "스트레스리스 시네마[CINE de CHEF]",
+          "start": "13:40",
+          "free": "58",
+          "total": "60"
+        },
+        {
+          "key": "극장판 치이카와-인어 섬의 비밀|템퍼 시네마[CINE de CHEF]|1510",
+          "title": "극장판 치이카와-인어 섬의 비밀",
+          "screen": "템퍼 시네마[CINE de CHEF]",
+          "start": "15:10",
+          "free": "30",
+          "total": "30"
         }
       ]
     }
